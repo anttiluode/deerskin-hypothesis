@@ -1,5 +1,7 @@
 # 🦌 The Deerskin Hypothesis
 
+Demo: https://anttiluode.github.io/deerskin-hypothesis/deerskin_interactive.html 
+
 ### Neuronal Membranes as Holographic Computational Surfaces
 
 > *"The brain is not a computer calculating numbers. It is a hall of deerskins — each neuron a two-dimensional computational surface whose ion channel mosaic encodes geometric information."*
