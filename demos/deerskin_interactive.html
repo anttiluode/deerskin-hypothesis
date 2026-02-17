@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Deerskin Hypothesis — Interactive Explorer</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #0a0a0f;
+    color: #c8c0b8;
+    font-family: 'EB Garamond', Georgia, serif;
+    font-size: 17px;
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  .grain {
+    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none; z-index: 9999;
+  }
+
+  header {
+    text-align: center;
+    padding: 60px 20px 40px;
+    border-bottom: 1px solid #1a1a2a;
+  }
+
+  header h1 {
+    font-size: 2.8em;
+    font-weight: 600;
+    color: #e8ddd0;
+    letter-spacing: 0.02em;
+    margin-bottom: 8px;
+  }
+
+  header h1 span { color: #b8956a; }
+
+  header p {
+    font-style: italic;
+    color: #887a6e;
+    font-size: 1.1em;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 30px;
+  }
+
+  section {
+    padding: 50px 0;
+    border-bottom: 1px solid #141420;
+  }
+
+  h2 {
+    font-size: 1.6em;
+    color: #d4c8b8;
+    margin-bottom: 12px;
+    font-weight: 600;
+  }
+
+  h2 .num {
+    color: #b8956a;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7em;
+    margin-right: 8px;
+  }
+
+  .desc {
+    color: #887a6e;
+    margin-bottom: 30px;
+    max-width: 700px;
+  }
+
+  .sim-row {
+    display: flex;
+    gap: 30px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .sim-panel {
+    flex: 1;
+    min-width: 280px;
+  }
+
+  canvas {
+    border: 1px solid #1a1a28;
+    border-radius: 4px;
+    display: block;
+    width: 100%;
+    image-rendering: pixelated;
+    background: #060608;
+  }
+
+  .canvas-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7em;
+    color: #555;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-top: 6px;
+    margin-bottom: 2px;
+  }
+
+  .controls {
+    margin-top: 16px;
+  }
+
+  .control-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+    gap: 12px;
+  }
+
+  .control-row label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75em;
+    color: #776a5e;
+    min-width: 100px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  input[type="range"] {
+    flex: 1;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 3px;
+    background: #1a1a28;
+    border-radius: 2px;
+    outline: none;
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: #b8956a;
+    cursor: pointer;
+  }
+
+  .val {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75em;
+    color: #b8956a;
+    min-width: 50px;
+    text-align: right;
+  }
+
+  .btn {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75em;
+    padding: 6px 16px;
+    background: #1a1a28;
+    color: #b8956a;
+    border: 1px solid #2a2a3a;
+    border-radius: 3px;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    transition: all 0.2s;
+  }
+
+  .btn:hover { background: #2a2a3a; border-color: #b8956a; }
+  .btn.active { background: #b8956a; color: #0a0a0f; }
+
+  .metric-bar {
+    display: flex;
+    gap: 20px;
+    margin-top: 14px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7em;
+  }
+
+  .metric { color: #555; }
+  .metric .mv { color: #b8956a; font-weight: 700; }
+
+  .quote {
+    border-left: 2px solid #2a2530;
+    padding: 12px 20px;
+    margin: 20px 0;
+    color: #776a5e;
+    font-style: italic;
+  }
+
+  .table-wrap {
+    overflow-x: auto;
+    margin: 20px 0;
+  }
+
+  table {
+    border-collapse: collapse;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8em;
+    width: 100%;
+  }
+
+  th, td {
+    padding: 8px 14px;
+    text-align: left;
+    border-bottom: 1px solid #141420;
+  }
+
+  th {
+    color: #b8956a;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.85em;
+  }
+
+  td { color: #887a6e; }
+  td.highlight { color: #d4c8b8; font-weight: 700; }
+
+  footer {
+    text-align: center;
+    padding: 40px 20px;
+    color: #444;
+    font-size: 0.9em;
+  }
+
+  footer a { color: #b8956a; text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+
+  @media (max-width: 700px) {
+    header h1 { font-size: 1.8em; }
+    .sim-row { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+<div class="grain"></div>
+
+<header>
+  <h1>The <span>Deerskin</span> Hypothesis</h1>
+  <p>Neuronal membranes as holographic computational surfaces — an interactive exploration</p>
+</header>
+
+<div class="container">
+
+<!-- SECTION 1: THE DEERSKIN -->
+<section id="s1">
+  <h2><span class="num">01</span> The Membrane as Checkerboard</h2>
+  <p class="desc">A neuron's membrane is not uniform. Ion channels cluster in patches of different sensitivity — a biological checkerboard. Below: two "deerskins" with different channel geometries. Adjust their frequencies and angles to see how the moiré interference pattern changes.</p>
+
+  <div class="sim-row">
+    <div class="sim-panel">
+      <canvas id="c_skin1" width="256" height="256"></canvas>
+      <div class="canvas-label">Deerskin A (Presynaptic)</div>
+      <div class="controls">
+        <div class="control-row">
+          <label>Frequency</label>
+          <input type="range" id="s1_f1" min="2" max="40" value="12" step="0.5">
+          <span class="val" id="s1_f1v">12</span>
+        </div>
+        <div class="control-row">
+          <label>Angle</label>
+          <input type="range" id="s1_a1" min="0" max="180" value="0" step="1">
+          <span class="val" id="s1_a1v">0°</span>
+        </div>
+      </div>
+    </div>
+    <div class="sim-panel">
+      <canvas id="c_skin2" width="256" height="256"></canvas>
+      <div class="canvas-label">Deerskin B (Postsynaptic)</div>
+      <div class="controls">
+        <div class="control-row">
+          <label>Frequency</label>
+          <input type="range" id="s1_f2" min="2" max="40" value="14" step="0.5">
+          <span class="val" id="s1_f2v">14</span>
+        </div>
+        <div class="control-row">
+          <label>Angle</label>
+          <input type="range" id="s1_a2" min="0" max="180" value="5" step="1">
+          <span class="val" id="s1_a2v">5°</span>
+        </div>
+      </div>
+    </div>
+    <div class="sim-panel">
+      <canvas id="c_moire" width="256" height="256"></canvas>
+      <div class="canvas-label">Moiré Interference (The Computation)</div>
+      <div class="metric-bar">
+        <div class="metric">Beat freq: <span class="mv" id="s1_beat">2.0</span></div>
+        <div class="metric">Stress: <span class="mv" id="s1_stress">0.34</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 2: CARRIER WAVE -->
+<section id="s2">
+  <h2><span class="num">02</span> The Soma Pulse as Carrier Wave</h2>
+  <p class="desc">When the soma fires, the pulse washes across the membrane — illuminating the channel mosaic like a lighthouse beam. The output at each synapse is the carrier modulated by the geometry it traversed. Watch the pulse propagate across the deerskin.</p>
+
+  <div class="sim-row">
+    <div class="sim-panel" style="flex:2">
+      <canvas id="c_carrier" width="512" height="256"></canvas>
+      <div class="canvas-label">Carrier wave propagating across membrane surface</div>
+      <div class="controls">
+        <div class="control-row">
+          <label>Pulse Speed</label>
+          <input type="range" id="s2_speed" min="0.5" max="5" value="2" step="0.1">
+          <span class="val" id="s2_speedv">2.0</span>
+        </div>
+        <div class="control-row">
+          <label>Channel Density</label>
+          <input type="range" id="s2_density" min="4" max="30" value="12" step="1">
+          <span class="val" id="s2_densityv">12</span>
+        </div>
+        <div class="control-row">
+          <button class="btn" id="s2_fire">Fire Soma</button>
+        </div>
+      </div>
+    </div>
+    <div class="sim-panel">
+      <canvas id="c_output" width="256" height="128"></canvas>
+      <div class="canvas-label">Synaptic output waveform (modulated carrier)</div>
+    </div>
+  </div>
+</section>
+
+<!-- SECTION 3: THE ECG LOOP -->
+<section id="s3">
+  <h2><span class="num">03</span> Emergent Oscillation from Self-Observation</h2>
+  <p class="desc">Close the loop: a spatial pattern observes itself through finite sampling under homeostatic regulation. No static solution exists. The system must pulse. Adjust the sampling resolution to see how the oscillation changes at the Nyquist boundary.</p>
+
+  <div class="sim-row">
+    <div class="sim-panel">
+      <canvas id="c_pattern" width="256" height="256"></canvas>
+      <div class="canvas-label">Spatial pattern (the "checkerboard")</div>
+    </div>
+    <div class="sim-panel" style="flex:2">
+      <canvas id="c_ecg" width="512" height="200"></canvas>
+      <div class="canvas-label">Emergent oscillation (homeostatic output)</div>
+      <div class="controls">
+        <div class="control-row">
+          <label>Sampling Res</label>
+          <input type="range" id="s3_res" min="4" max="64" value="16" step="1">
+          <span class="val" id="s3_resv">16</span>
+        </div>
+        <div class="control-row">
+          <label>Pattern Freq</label>
+          <input type="range" id="s3_freq" min="2" max="30" value="10" step="0.5">
+          <span class="val" id="s3_freqv">10</span>
+        </div>
+        <div class="control-row">
+          <label>Regulation</label>
+          <input type="range" id="s3_gain" min="0.1" max="3" value="1" step="0.1">
+          <span class="val" id="s3_gainv">1.0</span>
+        </div>
+      </div>
+      <div class="metric-bar">
+        <div class="metric">Aliasing: <span class="mv" id="s3_alias">—</span></div>
+        <div class="metric">Period: <span class="mv" id="s3_period">—</span></div>
+        <div class="metric">Regime: <span class="mv" id="s3_regime">—</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="quote">
+    "The heartbeat isn't the coupler regulating the checkerboard. The heartbeat is the loop discovering that periodicity is the only consistent solution to the constraint: a static geometry must satisfy a dynamic governor."
+  </div>
+</section>
+
+<!-- SECTION 4: COMPARISON -->
+<section id="s4">
+  <h2><span class="num">04</span> Benchmark: Geometry vs Weights</h2>
+  <p class="desc">MoiréNet solves XOR using 9 geometric parameters (frequency, angle, phase per neuron). A standard MLP uses 9 scalar weights. The geometric approach wins on every metric.</p>
+
+  <div class="table-wrap">
+    <table>
+      <tr><th>Metric</th><th>MoiréNet</th><th>MLP</th><th>Advantage</th></tr>
+      <tr><td>Parameters</td><td>9 (geometric)</td><td>9 (scalar)</td><td>Same count, different kind</td></tr>
+      <tr><td>Success Rate</td><td class="highlight">30/30 (100%)</td><td>22/30 (73%)</td><td class="highlight">+27%</td></tr>
+      <tr><td>Convergence</td><td class="highlight">19 generations</td><td>541 epochs</td><td class="highlight">28× faster</td></tr>
+      <tr><td>Time</td><td class="highlight">0.002s</td><td>0.318s</td><td class="highlight">159× faster</td></tr>
+      <tr><td>Nonlinearity</td><td>Intrinsic (aliasing)</td><td>Added (sigmoid)</td><td>Free from geometry</td></tr>
+    </table>
+  </div>
+</section>
+
+<!-- SECTION 5: THE STACK -->
+<section id="s5">
+  <h2><span class="num">05</span> The Cortical Stack</h2>
+  <p class="desc">The neocortex is six layers of deerskins stacked on each other. Axons pierce layers like vias in a circuit board. Synapses are the communication points between skins. The whole system: a hall of mirrors at finite resolution.</p>
+
+  <div class="sim-row">
+    <div class="sim-panel" style="flex:2">
+      <canvas id="c_stack" width="512" height="300"></canvas>
+      <div class="canvas-label">Cortical layer stack — deerskins with inter-layer connections</div>
+      <div class="controls">
+        <div class="control-row">
+          <label>Layer Activity</label>
+          <input type="range" id="s5_act" min="0" max="1" value="0.5" step="0.01">
+          <span class="val" id="s5_actv">0.5</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</div>
+
+<footer>
+  <p><a href="https://github.com/anttiluode/deerskin-hypothesis">GitHub Repository</a> · Antti Luode, 2026 · Speculative Working Paper</p>
+  <p style="margin-top:8px; font-style:italic; color:#333">"Here I am, completely lost in science, being very unscientific."</p>
+</footer>
+
+<script>
+// ========================================================
+// SECTION 1: MOIRÉ INTERFERENCE BETWEEN TWO DEERSKINS
+// ========================================================
+const S = 256;
+
+function drawGrid(ctx, w, h, freq, angleDeg, color) {
+  const data = ctx.createImageData(w, h);
+  const angle = angleDeg * Math.PI / 180;
+  const ca = Math.cos(angle), sa = Math.sin(angle);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const rx = (x - w/2) * ca - (y - h/2) * sa;
+      const ry = (x - w/2) * sa + (y - h/2) * ca;
+      const gx = Math.floor(rx / (w / freq)) % 2;
+      const gy = Math.floor(ry / (h / freq)) % 2;
+      const v = Math.abs(gx) ^ Math.abs(gy) ? 1 : 0;
+      const i = (y * w + x) * 4;
+      const brightness = v * 180 + 20;
+      data.data[i] = Math.floor(brightness * color[0]);
+      data.data[i+1] = Math.floor(brightness * color[1]);
+      data.data[i+2] = Math.floor(brightness * color[2]);
+      data.data[i+3] = 255;
+    }
+  }
+  ctx.putImageData(data, 0, 0);
+}
+
+function drawMoire(ctx, w, h, f1, a1, f2, a2) {
+  const data = ctx.createImageData(w, h);
+  const ang1 = a1 * Math.PI / 180, ang2 = a2 * Math.PI / 180;
+  const c1 = Math.cos(ang1), s1 = Math.sin(ang1);
+  const c2 = Math.cos(ang2), s2 = Math.sin(ang2);
+
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const dx = x - w/2, dy = y - h/2;
+      const rx1 = dx * c1 - dy * s1;
+      const ry1 = dx * s1 + dy * c1;
+      const rx2 = dx * c2 - dy * s2;
+      const ry2 = dx * s2 + dy * c2;
+
+      const v1 = (Math.sin(rx1 * f1 * 2 * Math.PI / w) > 0 ? 1 : 0) ^
+                 (Math.sin(ry1 * f1 * 2 * Math.PI / h) > 0 ? 1 : 0);
+      const v2 = (Math.sin(rx2 * f2 * 2 * Math.PI / w) > 0 ? 1 : 0) ^
+                 (Math.sin(ry2 * f2 * 2 * Math.PI / h) > 0 ? 1 : 0);
+
+      const moire = Math.abs(v1 - v2);
+      const i = (y * w + x) * 4;
+      data.data[i] = moire * 184 + 10;
+      data.data[i+1] = moire * 149 + 10;
+      data.data[i+2] = moire * 106 + 10;
+      data.data[i+3] = 255;
+    }
+  }
+  ctx.putImageData(data, 0, 0);
+}
+
+function updateS1() {
+  const f1 = +document.getElementById('s1_f1').value;
+  const a1 = +document.getElementById('s1_a1').value;
+  const f2 = +document.getElementById('s1_f2').value;
+  const a2 = +document.getElementById('s1_a2').value;
+
+  document.getElementById('s1_f1v').textContent = f1;
+  document.getElementById('s1_a1v').textContent = a1 + '°';
+  document.getElementById('s1_f2v').textContent = f2;
+  document.getElementById('s1_a2v').textContent = a2 + '°';
+
+  const ctx1 = document.getElementById('c_skin1').getContext('2d');
+  const ctx2 = document.getElementById('c_skin2').getContext('2d');
+  const ctxM = document.getElementById('c_moire').getContext('2d');
+
+  drawGrid(ctx1, S, S, f1, a1, [0.6, 0.7, 0.8]);
+  drawGrid(ctx2, S, S, f2, a2, [0.8, 0.7, 0.6]);
+  drawMoire(ctxM, S, S, f1, a1, f2, a2);
+
+  const dAngle = (a1 - a2) * Math.PI / 180;
+  const beat = Math.sqrt(f1*f1 + f2*f2 - 2*f1*f2*Math.cos(dAngle));
+  document.getElementById('s1_beat').textContent = beat.toFixed(1);
+  const stress = Math.min(1, 1 / (beat + 0.1));
+  document.getElementById('s1_stress').textContent = stress.toFixed(2);
+}
+
+['s1_f1','s1_a1','s1_f2','s1_a2'].forEach(id =>
+  document.getElementById(id).addEventListener('input', updateS1));
+updateS1();
+
+// ========================================================
+// SECTION 2: CARRIER WAVE PROPAGATION
+// ========================================================
+let carrierPhase = -999;
+let outputHistory = [];
+
+function fireCarrier() { carrierPhase = 0; outputHistory = []; }
+document.getElementById('s2_fire').addEventListener('click', fireCarrier);
+
+function updateS2() {
+  const speed = +document.getElementById('s2_speed').value;
+  const density = +document.getElementById('s2_density').value;
+  document.getElementById('s2_speedv').textContent = speed.toFixed(1);
+  document.getElementById('s2_densityv').textContent = density;
+
+  const cCarrier = document.getElementById('c_carrier');
+  const ctx = cCarrier.getContext('2d');
+  const w = 512, h = 256;
+  const data = ctx.createImageData(w, h);
+
+  // Generate membrane pattern
+  const cellW = w / density;
+
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const gx = Math.floor(x / cellW) % 2;
+      const gy = Math.floor(y / (h / (density/2))) % 2;
+      let membrane = (gx ^ gy) ? 0.6 : 0.15;
+
+      // Carrier wave pulse
+      if (carrierPhase >= 0) {
+        const pulseCenter = carrierPhase * speed * 20;
+        const dist = x - pulseCenter;
+        const pulse = Math.exp(-dist * dist / 2000) * Math.cos(dist * 0.1);
+        const modulated = membrane * (1 + pulse * 2);
+        membrane = Math.max(0, Math.min(1, modulated));
+      }
+
+      const i = (y * w + x) * 4;
+      data.data[i] = Math.floor(membrane * 200);
+      data.data[i+1] = Math.floor(membrane * 170);
+      data.data[i+2] = Math.floor(membrane * 120);
+      data.data[i+3] = 255;
+    }
+  }
+  ctx.putImageData(data, 0, 0);
+
+  // Output waveform
+  if (carrierPhase >= 0) {
+    const pulseCenter = carrierPhase * speed * 20;
+    let outputVal = 0;
+    for (let x = 0; x < w; x++) {
+      const dist = x - pulseCenter;
+      const pulse = Math.exp(-dist * dist / 2000);
+      const gx = Math.floor(x / cellW) % 2;
+      outputVal += pulse * (gx ? 1 : -1);
+    }
+    outputHistory.push(outputVal / 100);
+    carrierPhase++;
+  }
+
+  // Draw output
+  const cOut = document.getElementById('c_output');
+  const ctxO = cOut.getContext('2d');
+  ctxO.fillStyle = '#060608';
+  ctxO.fillRect(0, 0, 256, 128);
+
+  if (outputHistory.length > 1) {
+    ctxO.beginPath();
+    ctxO.strokeStyle = '#b8956a';
+    ctxO.lineWidth = 1.5;
+    const maxV = Math.max(...outputHistory.map(Math.abs), 0.01);
+    for (let i = 0; i < outputHistory.length && i < 256; i++) {
+      const x = i;
+      const y = 64 - (outputHistory[i] / maxV) * 50;
+      if (i === 0) ctxO.moveTo(x, y);
+      else ctxO.lineTo(x, y);
+    }
+    ctxO.stroke();
+  }
+
+  if (carrierPhase > 50) carrierPhase = -999;
+}
+
+['s2_speed', 's2_density'].forEach(id =>
+  document.getElementById(id).addEventListener('input', () => {}));
+
+// ========================================================
+// SECTION 3: ECG FEEDBACK LOOP
+// ========================================================
+let ecgHistory = new Float32Array(512);
+let ecgState = { value: 0.5, integral: 0, phase: 0 };
+
+function stepECG() {
+  const res = +document.getElementById('s3_res').value;
+  const freq = +document.getElementById('s3_freq').value;
+  const gain = +document.getElementById('s3_gain').value;
+
+  document.getElementById('s3_resv').textContent = res;
+  document.getElementById('s3_freqv').textContent = freq;
+  document.getElementById('s3_gainv').textContent = gain.toFixed(1);
+
+  // Generate checkerboard at current scale
+  const scale = Math.max(2, Math.floor(30 - ecgState.value * 25));
+  let sampleSum = 0;
+  for (let i = 0; i < res; i++) {
+    for (let j = 0; j < res; j++) {
+      const x = Math.floor(i * 256 / res);
+      const y = Math.floor(j * 256 / res);
+      const rx = Math.floor(x * freq / 256);
+      const ry = Math.floor(y * freq / 256);
+      const checker = (rx % 2) ^ (ry % 2);
+      sampleSum += checker ? 1 : 0;
+    }
+  }
+  sampleSum /= (res * res);
+
+  // Homeostatic regulation (edge of chaos)
+  const setpoint = 0.5;
+  const error = sampleSum - setpoint;
+  ecgState.integral += error * 0.01;
+  ecgState.integral = Math.max(-0.5, Math.min(0.5, ecgState.integral));
+
+  const variance = ecgHistory.slice(-50).reduce((s, v) => s + (v - setpoint) ** 2, 0) / 50;
+  const targetVar = 0.1;
+  const varError = variance - targetVar;
+
+  if (varError > 0) {
+    // Dampen
+    ecgState.value = setpoint + Math.tanh(error * gain * 3) / 3;
+  } else {
+    // Excite
+    ecgState.value = setpoint + error * (1 + Math.abs(varError) * 10) * gain;
+    ecgState.value = setpoint + Math.tanh((ecgState.value - setpoint) * 2);
+  }
+
+  ecgState.value = Math.max(0, Math.min(1, ecgState.value));
+
+  // Shift history
+  ecgHistory.copyWithin(0, 1);
+  ecgHistory[511] = ecgState.value;
+
+  // Draw pattern
+  const ctxP = document.getElementById('c_pattern').getContext('2d');
+  const pData = ctxP.createImageData(256, 256);
+  for (let y = 0; y < 256; y++) {
+    for (let x = 0; x < 256; x++) {
+      const rx = Math.floor(x * freq / 256 + ecgState.value * 10);
+      const ry = Math.floor(y * freq / 256);
+      const v = (rx % 2) ^ (ry % 2) ? 200 : 30;
+      const i = (y * 256 + x) * 4;
+      pData.data[i] = v * 0.6;
+      pData.data[i+1] = v * 0.7;
+      pData.data[i+2] = v * 0.8;
+      pData.data[i+3] = 255;
+    }
+  }
+  ctxP.putImageData(pData, 0, 0);
+
+  // Draw ECG trace
+  const ctxE = document.getElementById('c_ecg').getContext('2d');
+  ctxE.fillStyle = '#060608';
+  ctxE.fillRect(0, 0, 512, 200);
+
+  // Setpoint line
+  ctxE.strokeStyle = '#1a2a1a';
+  ctxE.beginPath();
+  ctxE.moveTo(0, 100);
+  ctxE.lineTo(512, 100);
+  ctxE.stroke();
+
+  // ECG trace
+  ctxE.beginPath();
+  ctxE.strokeStyle = '#b8956a';
+  ctxE.lineWidth = 1.5;
+  for (let i = 0; i < 512; i++) {
+    const y = 190 - ecgHistory[i] * 180;
+    if (i === 0) ctxE.moveTo(i, y);
+    else ctxE.lineTo(i, y);
+  }
+  ctxE.stroke();
+
+  // Metrics
+  const aliasing = Math.abs(freq - res) / Math.max(freq, res);
+  document.getElementById('s3_alias').textContent = aliasing.toFixed(2);
+  document.getElementById('s3_regime').textContent = varError > 0 ? 'DAMPING' : 'EXCITING';
+
+  // Estimate period
+  let crossings = 0;
+  for (let i = 1; i < 100; i++) {
+    if ((ecgHistory[511-i] - 0.5) * (ecgHistory[511-i-1] - 0.5) < 0) crossings++;
+  }
+  const period = crossings > 0 ? Math.floor(200 / crossings) : '∞';
+  document.getElementById('s3_period').textContent = period;
+}
+
+['s3_res','s3_freq','s3_gain'].forEach(id =>
+  document.getElementById(id).addEventListener('input', () => {}));
+
+// ========================================================
+// SECTION 5: CORTICAL STACK
+// ========================================================
+function drawStack() {
+  const act = +document.getElementById('s5_act').value;
+  document.getElementById('s5_actv').textContent = act.toFixed(2);
+
+  const canvas = document.getElementById('c_stack');
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#060608';
+  ctx.fillRect(0, 0, 512, 300);
+
+  const layers = 6;
+  const layerH = 30;
+  const startY = 30;
+  const layerColors = ['#2a1a1a','#1a2a1a','#1a1a2a','#2a2a1a','#1a2a2a','#2a1a2a'];
+  const layerNames = ['I','II/III','IV','V','VI','WM'];
+
+  // Draw layers
+  for (let l = 0; l < layers; l++) {
+    const y = startY + l * (layerH + 8);
+
+    // Layer fill with "deerskin" texture
+    for (let x = 20; x < 490; x++) {
+      for (let dy = 0; dy < layerH; dy++) {
+        const noise = Math.sin(x * 0.3 + l * 17) * Math.cos(dy * 0.8 + l * 7) * 0.5 + 0.5;
+        const pulse = Math.sin(x * 0.02 + act * Math.PI * 2 + l * 0.5) * 0.5 + 0.5;
+        const brightness = noise * pulse * act * 0.4 + 0.05;
+
+        ctx.fillStyle = `rgba(${120+l*20}, ${100+l*10}, ${80+l*15}, ${brightness})`;
+        ctx.fillRect(x, y + dy, 1, 1);
+      }
+    }
+
+    // Layer border
+    ctx.strokeStyle = layerColors[l];
+    ctx.strokeRect(20, y, 470, layerH);
+
+    // Label
+    ctx.fillStyle = '#555';
+    ctx.font = '10px "JetBrains Mono", monospace';
+    ctx.fillText(layerNames[l], 4, y + 18);
+  }
+
+  // Draw "vias" (axonal connections through layers)
+  const vias = [80, 160, 250, 340, 420];
+  ctx.lineWidth = 1;
+  for (const vx of vias) {
+    const fromLayer = Math.floor(Math.random() * 3);
+    const toLayer = fromLayer + 2 + Math.floor(Math.random() * 2);
+    if (toLayer >= layers) continue;
+
+    const y1 = startY + fromLayer * (layerH + 8) + layerH;
+    const y2 = startY + Math.min(toLayer, layers-1) * (layerH + 8);
+
+    ctx.beginPath();
+    ctx.strokeStyle = `rgba(184, 149, 106, ${act * 0.6})`;
+    ctx.setLineDash([3, 4]);
+    ctx.moveTo(vx + Math.sin(act * 5 + vx) * 3, y1);
+    ctx.lineTo(vx + Math.sin(act * 5 + vx + 1) * 3, y2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Synapse dot
+    ctx.beginPath();
+    ctx.fillStyle = `rgba(184, 149, 106, ${act})`;
+    ctx.arc(vx, y2, 2, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+document.getElementById('s5_act').addEventListener('input', drawStack);
+drawStack();
+
+// ========================================================
+// MAIN ANIMATION LOOP
+// ========================================================
+function animate() {
+  updateS2();
+  stepECG();
+  requestAnimationFrame(animate);
+}
+animate();
+
+// Fire an initial carrier pulse after a delay
+setTimeout(fireCarrier, 1000);
+</script>
+</body>
+</html>
