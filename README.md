@@ -127,6 +127,12 @@ python janus/janus_brainv2.py
 ### PerceptionLab Workflows
 The `.json` workflows require [PerceptionLab](https://github.com/anttiluode/perceptionlab) to run. The node `.py` files go in the `nodes/` folder.
 
+Easier 3 click install for perception lab: 
+
+https://huggingface.co/spaces/Aluode/PerceptionLabPortable 
+
+(You have to put nodes to nodes folder) 
+
 ---
 
 ## Key References
