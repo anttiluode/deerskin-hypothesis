@@ -1,7 +1,5 @@
 # 🦌 The Deerskin Hypothesis
 
-Demo: https://anttiluode.github.io/deerskin-hypothesis/deerskin_interactive.html 
-
 ### Neuronal Membranes as Holographic Computational Surfaces
 
 > *"The brain is not a computer calculating numbers. It is a hall of deerskins — each neuron a two-dimensional computational surface whose ion channel mosaic encodes geometric information."*
@@ -126,12 +124,6 @@ python janus/janus_brainv2.py
 
 ### PerceptionLab Workflows
 The `.json` workflows require [PerceptionLab](https://github.com/anttiluode/perceptionlab) to run. The node `.py` files go in the `nodes/` folder.
-
-Easier 3 click install for perception lab: 
-
-https://huggingface.co/spaces/Aluode/PerceptionLabPortable 
-
-(You have to put nodes to nodes folder) 
 
 ---
 
