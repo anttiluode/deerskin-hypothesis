@@ -191,7 +191,22 @@ spikes, bistability, period-2 oscillation, four dynamical regimes, and death-by-
 >
 > Amplitude can be extraordinarily rich. It cannot carry an arrow, and it cannot hold two things where one fits.
 
----
+## Where the spin actually came from (The Skin vs. The Cable)
+
+The founding intuition of the Deerskin Hypothesis was highly visual: two cortical layers ("skins") sitting slightly off-register, fighting each other. The assumption was that this geometric friction generated the "spin" or phase of the system.  
+A rigorous mathematical audit proves this is impossible, but reveals a much stronger truth hiding in the original architecture.  
+**The Reciprocity Trap**  
+Testing two static skins—at any angle of misalignment and any frequency pair—produces a net directed flux of exactly **0.0000**. Two static layers acting on a common drive form a memoryless per-site gain matrix. By definition, this operator is perfectly symmetric. No matter how beautiful the Moiré interference is, static amplitude cannot generate an arrow of time.  
+**The Real Source of the Arrow**  
+The phase, the spin, and the directionality came entirely from the component originally thought of as just the plumbing: **the dendritic delay (the cable equation).**  
+When a distance-dependent cable delay or a traveling pulse is introduced, the skew becomes non-zero, and its sign flips perfectly when the gradient reverses. The origin picture always contained two distinct objects doing two distinct jobs:
+
+* **The Skins (Moiré) \= Amplitude:** This is the gain structure. It provides the spatial aliasing, the bistable zero-cell, the heartbeat, and the entire regime map. It is infinitely rich, but it carries no phase.  
+* **The Dendrite (Cable) \= Phase:** This is the delay structure. It provides the lag gradient, which mathematically generates the skew operator $A \= (C\_\\tau \- C\_\\tau^T)/2$. This is what carries the arrow of time, the chirality, and the spectral islands.
+
+**The Spinning Node Resolution**  
+The spinningcheckerboardnode.py worked to prevent the system from locking into dead basins, but *not* because the skins were fighting. It worked because rotation makes the pattern move, and **motion is a delay gradient in disguise**.  
+The spinning node was the first physical model of phase because it accidentally implemented time-delay through spatial rotation. The presynaptic "ghost" arrives through a delay line, and the delay is what carries the direction. The 18 months of development between the ECG loop and the V20 Geometric Neuron were spent mathematically separating the amplitude of the skins from the phase of the cable.
 
 ## 5. What still stands, undamaged
 
